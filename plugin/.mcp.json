@@ -2,7 +2,7 @@
   "mcpServers": {
     "crosscheck": {
       "command": "npx",
-      "args": ["-y", "crosscheckapi@0.4.0"],
+      "args": ["-y", "crosscheckapi@0.5.0"],
       "env": {
         "CROSSCHECK_WALLET_KEY": "${CROSSCHECK_WALLET_KEY:-}",
         "CROSSCHECK_MAX_USD": "${CROSSCHECK_MAX_USD:-0.10}",

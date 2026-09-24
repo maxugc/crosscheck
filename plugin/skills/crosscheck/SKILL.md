@@ -5,7 +5,7 @@ license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
   author: crosscheck
-  version: "0.4.0"
+  version: "0.5.0"
   homepage: https://crosscheckapi.com/llms.txt
   openclaw:
     requires:
@@ -44,7 +44,7 @@ Pick whichever fits your setup.
 2. **CLI**: `npx -p crosscheckapi crosscheck quote draft.txt`, `npx -p crosscheckapi crosscheck order draft.txt`, `npx -p crosscheckapi crosscheck accept task.txt deliverable.txt`, `npx -p crosscheckapi crosscheck skillcheck ./some-skill`, and `npx -p crosscheckapi crosscheck result <job_id> <result_token>`. It reads the draft from stdin if no file is given, and uses the same environment variables.
 3. **Your own x402 client**: POST `https://crosscheckapi.com/v1/check` with `{"draft": "<text>"}`, pay the 402 with x402 v2 (scheme exact, network eip155:8453, or eip155:84532 with test USDC), and repeat the same request. Details are in [references/API.md](references/API.md).
 
-Always send the whole draft exactly as your human would see it. A quote is free if you want the price first.
+Always send the whole draft exactly as your human would see it. A quote is free if you want the price first. If the draft relies on sources you have (search results, documents, notes), send them too as `sources` (up to 10 texts): each claim is then checked against them, and a claim a source contradicts fails the check.
 
 ## Checking work another agent hands back (accept)
 

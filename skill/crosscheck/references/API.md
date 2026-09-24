@@ -22,6 +22,9 @@ Response 200:
 
 ## POST /v1/check (paid, x402 v2)
 
+Optional `sources`: up to 10 items, each a string or `{"text", "title", "url"}`, holding the text the draft relies on. They count toward size and price. The verdict then has `grounding` with each claim marked `supported`, `contradicted`, or `not_found`; a quote counts only if code finds it in that source. A contradicted claim is a major issue.
+
+
 1. Send `{"draft": "<text>"}` with no payment header. Response: 402 with header `PAYMENT-REQUIRED` (base64 JSON, x402 v2). `accepts` has one option per network, Base (`eip155:8453`, USDC `0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913`, `extra.name` "USD Coin") first and Base Sepolia (`eip155:84532`, `extra.name` "USDC") second. Each has `scheme: "exact"`, `amount` (atomic USDC, 6 decimals), `asset`, `payTo`, `maxTimeoutSeconds: 300`, and `extra: {"name", "version": "2", "paymentFlow": "upfront"}`.
 2. Sign an EIP-3009 `TransferWithAuthorization` for exactly `amount` to `payTo`, build the v2 payment payload with `accepted` equal to the option you pay (keep every `extra` field), and resend the identical body with header `PAYMENT-SIGNATURE: <base64 payload>`.
 3. The payment settles before the review runs. Responses:

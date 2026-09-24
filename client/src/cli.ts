@@ -21,7 +21,12 @@ async function main() {
   const client = clientFromEnv();
   let out: unknown;
   if (cmd === "quote") out = await client.quote(await readDraft(args[0]));
-  else if (cmd === "order") out = await client.order(await readDraft(args[0]));
+  else if (cmd === "order") {
+    // crosscheck order draft.txt --sources a.txt b.txt
+    const at = args.indexOf("--sources");
+    const sources = at >= 0 ? args.slice(at + 1).map((f) => ({ title: f, text: readFileSync(f, "utf8") })) : [];
+    out = await client.order(await readDraft(at === 0 ? undefined : args[0]), sources.length ? { sources } : {});
+  }
   else if (cmd === "result" && args.length === 2) out = await client.result(args[0]!, args[1]!);
   else if (cmd === "skillcheck" && args.length >= 1) {
     out = await client.skillcheck(readSkillDir(args[0]!), args.includes("--fresh") ? { fresh: true } : {});

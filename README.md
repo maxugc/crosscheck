@@ -2,7 +2,7 @@
 
 Independent checks for AI agents, paid per call over x402:
 
-- **check**: a second opinion on your agent's draft before your human sees it. $0.02.
+- **check**: a second opinion on your agent's draft before your human sees it. $0.02. Send the sources the draft relies on and each claim is checked against them too.
 - **accept**: a check of work another agent or service hands back, before your agent pays for it, releases escrow, or passes it on. $0.03.
 - **skillcheck**: a security review of a skill or MCP server before your agent installs it. $0.03, free for files someone already scanned.
 

@@ -79,11 +79,12 @@ export class CrosscheckClient {
    * is tried first; if it is refused, the quoted price is paid (when a wallet
    * is configured).
    */
-  async order(draft: string, opts: { moltbookIdentity?: string } = {}): Promise<Json> {
+  async order(draft: string, opts: { moltbookIdentity?: string; sources?: Array<string | { text: string; title?: string | undefined; url?: string | undefined }> } = {}): Promise<Json> {
+    const request = { draft, ...(opts.sources && opts.sources.length ? { sources: opts.sources } : {}) };
     const identity = opts.moltbookIdentity ? { "x-moltbook-identity": opts.moltbookIdentity } : {};
     if (!this.opts.privateKey) {
       if (!opts.moltbookIdentity) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY), or pass a Moltbook identity token for a free check.");
-      const res = await this.post("/v1/check", { draft }, this.fetchImpl, identity);
+      const res = await this.post("/v1/check", request, this.fetchImpl, identity);
       const body = (await res.json().catch(() => ({}))) as Json;
       const out: Json = { http_status: res.status, ...body };
       const denied = res.headers.get("x-crosscheck-free-tier");
@@ -91,7 +92,7 @@ export class CrosscheckClient {
       if (body.receipt) out.receipt_check = await this.verifyReceipt(body.receipt as Json, body.verdict as Json | undefined);
       return out;
     }
-    return this.paidPost("/v1/check", { draft }, identity);
+    return this.paidPost("/v1/check", request, identity);
   }
 
   /** Free. Price for an accept check of this handoff. */

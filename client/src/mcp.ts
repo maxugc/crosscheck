@@ -11,7 +11,7 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.4.0" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.5.0" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -36,11 +36,16 @@ serveStdio(() => {
           .string()
           .optional()
           .describe("Optional Moltbook identity token (audience crosscheckapi.com) for a free check; each token works once"),
+        sources: z
+          .array(z.object({ text: z.string(), title: z.string().optional(), url: z.string().optional() }))
+          .max(10)
+          .optional()
+          .describe("Optional: the text the draft relies on (search results, documents). Each claim is then checked against it."),
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ draft, moltbook_identity }) =>
-      text(await client.order(draft, moltbook_identity ? { moltbookIdentity: moltbook_identity } : {})),
+    async ({ draft, moltbook_identity, sources }) =>
+      text(await client.order(draft, { ...(moltbook_identity ? { moltbookIdentity: moltbook_identity } : {}), ...(sources ? { sources } : {}) })),
   );
 
   server.registerTool(
