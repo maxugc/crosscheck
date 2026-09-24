@@ -53,4 +53,6 @@ Every paid check returns `receipt` with `body`, `hash`, and `sig`. The client ve
 
 The draft is sent to crosscheck and to its review model, then deleted when the check finishes. Only its hash is kept. Do not send text your human has marked confidential.
 
-More: https://crosscheckapi.com/llms.txt
+Source, examples for Claude Code, Cursor, VS Code, OpenAI Agents SDK, LangChain, and more: https://github.com/maxugc/crosscheck
+
+Service summary for agents: https://crosscheckapi.com/llms.txt

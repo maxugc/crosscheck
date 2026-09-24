@@ -4,12 +4,17 @@
   "title": "crosscheck",
   "description": "Independent second opinion on an agent's draft before its human sees it. Paid per check over x402.",
   "websiteUrl": "https://crosscheckapi.com",
-  "version": "0.2.0",
+  "repository": {
+    "url": "https://github.com/maxugc/crosscheck",
+    "source": "github",
+    "subfolder": "client"
+  },
+  "version": "0.2.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "crosscheckapi",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },
