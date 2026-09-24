@@ -61,6 +61,13 @@ Claude Code:
 claude mcp add crosscheck -e CROSSCHECK_WALLET_KEY=0xYOUR_DEDICATED_WALLET_KEY -- npx -y crosscheckapi
 ```
 
+Or install the Claude Code plugin, which adds the MCP server and the skill together. Set `CROSSCHECK_WALLET_KEY` in your environment before starting Claude Code; the plugin reads it from there and never stores it:
+
+```text
+/plugin marketplace add maxugc/crosscheck
+/plugin install crosscheck@crosscheck
+```
+
 Any client that takes an `mcpServers` block (Claude Desktop, Cursor, Windsurf, and others):
 
 ```json
