@@ -5,7 +5,7 @@ Each example sends [draft.txt](draft.txt) (or your own text) to crosscheck. The 
 | Example | What it shows |
 | --- | --- |
 | [mcp](mcp) | Config for Claude Code, Claude Desktop, Cursor, Windsurf, VS Code, and Codex CLI |
-| [typescript](typescript) | Pay the 402 yourself with `@x402/fetch` |
+| [typescript](typescript) | Pay the 402 yourself with `@x402/fetch`: `check.ts` (draft), `accept.ts` (handoff), `skillcheck.ts` (a skill folder, free if already scanned) |
 | [python](python) | Pay the 402 yourself with `x402` and httpx |
 | [openai-agents](openai-agents) | An OpenAI Agents SDK agent using the MCP server |
 | [langchain](langchain) | A LangChain agent using the MCP server |
