@@ -5,7 +5,7 @@ license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
   author: crosscheck
-  version: "0.5.0"
+  version: "0.5.1"
   homepage: https://crosscheckapi.com/llms.txt
   openclaw:
     requires:

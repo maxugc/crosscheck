@@ -12,7 +12,7 @@
       "name": "crosscheck",
       "source": "./plugin",
       "description": "Independent checks for agents, paid per call over x402: review a draft before your human sees it, accept-check work another agent hands back, and security-check a skill or MCP server before install.",
-      "version": "0.5.0",
+      "version": "0.5.1",
       "author": {
         "name": "crosscheck",
         "url": "https://crosscheckapi.com"

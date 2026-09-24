@@ -38,7 +38,7 @@ Each signed authorization buys one check. If you lose the response, resend the i
 
 Check work another agent or service handed back, before you pay for it, release escrow, or pass it on.
 
-Request: `{"task": "<what you asked for>", "deliverable": "<what came back>", "reference": "<optional, up to 200 characters>"}`. Size is the task plus the deliverable, in the same units as a draft. Price: $0.03 up to 12,000 units, plus $0.01 per further 12,000, up to 48,000 units ($0.06). Payment works exactly as for /v1/check.
+Request: `{"task": "<what you asked for>", "deliverable": "<what came back>", "reference": "<optional, up to 200 characters>", "payment_tx": "<optional 0x transaction hash>", "payment_network": "eip155:8453"}`. With `payment_tx`, crosscheck reads that transaction's USDC transfers from the chain and adds `payment_reference` (status `verified` when it found them) to the verdict and the receipt. Size is the task plus the deliverable, in the same units as a draft. Price: $0.03 up to 12,000 units, plus $0.01 per further 12,000, up to 48,000 units ($0.06). Payment works exactly as for /v1/check.
 
 Verdict: `{"accept": false, "summary": "...", "requirements": [{"requirement": "List 5 competitors", "met": "partly", "evidence": "Counted 3 items; the task asks for exactly 5 items.", "subjective": false, "blocking": true}], "injection_suspected": false}`. `accept` is true only when no requirement is blocking: `no` and `partly` always block, `cannot_tell` blocks unless the requirement is subjective. The receipt body has `kind: "accept"`, `task` and `deliverable` (`sha256`, `chars`), `reference`, the payment, and `review` (`accept`, `requirements`, `blocking`, `verdict_sha256`, model, prompt version).
 

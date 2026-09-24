@@ -11,7 +11,7 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.5.0" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.5.1" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -58,10 +58,19 @@ serveStdio(() => {
         task: z.string().min(1).max(200_000).describe("The task you gave, with every requirement, exactly as sent"),
         deliverable: z.string().min(1).max(200_000).describe("What came back, exactly as received"),
         reference: z.string().max(200).optional().describe("Optional order id or transaction hash to record on the receipt"),
+        payment_tx: z.string().optional().describe("Optional: the transaction you paid the other agent with; crosscheck verifies it on-chain and binds it to the receipt"),
+        payment_network: z.string().optional().describe("CAIP-2 network of payment_tx, default eip155:8453"),
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ task, deliverable, reference }) => text(await client.accept(task, deliverable, reference ? { reference } : {})),
+    async ({ task, deliverable, reference, payment_tx, payment_network }) =>
+      text(
+        await client.accept(task, deliverable, {
+          ...(reference ? { reference } : {}),
+          ...(payment_tx ? { paymentTx: payment_tx } : {}),
+          ...(payment_network ? { paymentNetwork: payment_network } : {}),
+        }),
+      ),
   );
 
   server.registerTool(

@@ -106,9 +106,15 @@ export class CrosscheckClient {
    * before paying it, releasing escrow, or passing the work on. Returns accept or reject
    * with each requirement judged, and a signed receipt.
    */
-  async accept(task: string, deliverable: string, opts: { reference?: string } = {}): Promise<Json> {
+  async accept(task: string, deliverable: string, opts: { reference?: string; paymentTx?: string; paymentNetwork?: string } = {}): Promise<Json> {
     if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
-    return this.paidPost("/v1/accept", { task, deliverable, ...(opts.reference ? { reference: opts.reference } : {}) }, {});
+    const body = {
+      task,
+      deliverable,
+      ...(opts.reference ? { reference: opts.reference } : {}),
+      ...(opts.paymentTx ? { payment_tx: opts.paymentTx, ...(opts.paymentNetwork ? { payment_network: opts.paymentNetwork } : {}) } : {}),
+    };
+    return this.paidPost("/v1/accept", body, {});
   }
 
   private async paidPost(path: string, body: unknown, extraHeaders: Record<string, string>): Promise<Json> {
