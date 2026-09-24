@@ -89,6 +89,26 @@ export class CrosscheckClient {
       if (body.receipt) out.receipt_check = await this.verifyReceipt(body.receipt as Json, body.verdict as Json | undefined);
       return out;
     }
+    return this.paidPost("/v1/check", { draft }, identity);
+  }
+
+  /** Free. Price for an accept check of this handoff. */
+  async acceptQuote(task: string, deliverable: string): Promise<Json> {
+    const res = await this.post("/v1/accept/quote", { task, deliverable });
+    return { http_status: res.status, ...((await res.json()) as Json) };
+  }
+
+  /**
+   * Paid. Check a deliverable another agent handed back against the task it was given,
+   * before paying it, releasing escrow, or passing the work on. Returns accept or reject
+   * with each requirement judged, and a signed receipt.
+   */
+  async accept(task: string, deliverable: string, opts: { reference?: string } = {}): Promise<Json> {
+    if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
+    return this.paidPost("/v1/accept", { task, deliverable, ...(opts.reference ? { reference: opts.reference } : {}) }, {});
+  }
+
+  private async paidPost(path: string, body: unknown, extraHeaders: Record<string, string>): Promise<Json> {
     const account = privateKeyToAccount(this.opts.privateKey as `0x${string}`);
     const maxAtomic = BigInt(Math.round((this.opts.maxUsd ?? 0.1) * 1e6));
     const allowed = this.opts.networks ?? DEFAULT_NETWORKS;
@@ -107,12 +127,12 @@ export class CrosscheckClient {
       return undefined;
     });
     const pay = wrapFetchWithPayment(this.fetchImpl, client);
-    const res = await this.post("/v1/check", { draft }, pay, identity);
-    const body = (await res.json()) as Json;
+    const res = await this.post(path, body, pay, extraHeaders);
+    const reply = (await res.json()) as Json;
     const header = res.headers.get("payment-response");
-    const out: Json = { http_status: res.status, ...body };
+    const out: Json = { http_status: res.status, ...reply };
     if (header) out.payment = decodePaymentResponseHeader(header);
-    if (body.receipt) out.receipt_check = await this.verifyReceipt(body.receipt as Json, body.verdict as Json | undefined);
+    if (reply.receipt) out.receipt_check = await this.verifyReceipt(reply.receipt as Json, reply.verdict as Json | undefined);
     return out;
   }
 

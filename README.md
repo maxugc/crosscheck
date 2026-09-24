@@ -1,6 +1,9 @@
 # crosscheck
 
-An independent second opinion on your agent's draft, before your human sees it.
+Independent checks for AI agents, paid per call over x402:
+
+- **check**: a second opinion on your agent's draft before your human sees it. $0.02.
+- **accept**: a check of work another agent or service hands back, before your agent pays for it, releases escrow, or passes it on. $0.03.
 
 Agents write emails, reports, client messages, and PR descriptions. The agent that wrote a draft is the worst one to check it. crosscheck is a separate reviewer: your agent sends the text and gets back a verdict, either pass or a list of specific issues with fixes, plus an Ed25519-signed receipt.
 
@@ -15,6 +18,27 @@ Each check costs $0.02 in USDC on Base, paid per request over [x402](https://x40
 - **Commitments** your agent may not be allowed to make: discounts, deadlines, refunds.
 - **Tone** that does not fit the reader.
 - **Prompt injection:** text aimed at an AI reviewer. A draft containing it never passes.
+
+## accept: check work another agent hands back
+
+Agents increasingly buy work from other agents: research, data, code, drafts. The buyer needs to know the work meets the task before it pays. Send the task you gave and the deliverable you got back:
+
+```json
+{"task": "List 5 competitors of Acme Robotics as a JSON array. Each item needs name, hq (city), and founded (year).",
+ "deliverable": "[{\"name\": \"Northwind Robotics\", \"hq\": \"Denver\", \"founded\": 2011}, {\"name\": \"Globex Automation\", \"hq\": \"Austin\"}]"}
+```
+
+You get accept or reject, with every requirement judged:
+
+```json
+{"accept": false,
+ "summary": "Rejected: 2 of 4 requirements not met. First: List 5 competitors (no).",
+ "requirements": [
+   {"requirement": "List 5 competitors", "met": "no", "evidence": "Counted 2 items; the task asks for exactly 5 items.", "subjective": false, "blocking": true},
+   {"requirement": "Each item needs founded (year)", "met": "partly", "evidence": "Checked all 2 items: \"founded\" is missing in item 2.", "subjective": false, "blocking": true}]}
+```
+
+(The two requirements that passed are left out here.) Counts, required JSON fields, and figures are checked in code, not by the model. A deliverable that claims its own completeness, or tries to talk the checker into accepting, never passes. The signed receipt holds hashes of the task and the deliverable and your optional reference (an order id or transaction hash), so both agents can see exactly what was checked.
 
 ## Quick start: MCP
 
@@ -38,15 +62,17 @@ Any client that takes an `mcpServers` block (Claude Desktop, Cursor, Windsurf, a
 }
 ```
 
-VS Code, Codex CLI, and other setups are in [examples/mcp](examples/mcp). The server has three tools: `quote` (free), `order` (pays and returns the verdict), and `result` (free).
+VS Code, Codex CLI, and other setups are in [examples/mcp](examples/mcp). The server has four tools: `quote` (free), `order` (checks a draft), `accept` (checks work another agent handed back), and `result` (free).
 
 Use a dedicated wallet that holds a few dollars of USDC on Base, never your main wallet. The client refuses any price above `CROSSCHECK_MAX_USD` (default `0.10`). To try it without real money, get test USDC from https://faucet.circle.com and add `"CROSSCHECK_NETWORKS": "eip155:84532"` to `env`.
 
 ## Add one line to your agent's instructions
 
-A tool only helps if the agent calls it. Put this in your agent's system prompt:
+A tool only helps if the agent calls it. Put these in your agent's system prompt:
 
 > Before you give your human any draft that contains numbers, dates, money, or commitments, or that will be sent to someone else, call crosscheck's `order` tool with the full draft exactly as your human will see it. Fix every blocker and major issue it reports. Say the draft was checked only if the verdict passed.
+
+> Before you pay for work another agent or service delivered, or pass it on, call crosscheck's `accept` tool with the task you gave and the deliverable exactly as received. Pay or use it only if accept is true; otherwise send the blocking requirements back.
 
 ## Without MCP
 

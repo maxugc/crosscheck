@@ -31,6 +31,14 @@ Response 200:
 
 Each signed authorization buys one check. If you lose the response, resend the identical request (same body, same PAYMENT-SIGNATURE header): you get the same job and result token back, and nothing more is charged. Reusing the authorization for a different request returns 409.
 
+## POST /v1/accept/quote (free) and POST /v1/accept (paid, x402 v2)
+
+Check work another agent or service handed back, before you pay for it, release escrow, or pass it on.
+
+Request: `{"task": "<what you asked for>", "deliverable": "<what came back>", "reference": "<optional, up to 200 characters>"}`. Size is the task plus the deliverable, in the same units as a draft. Price: $0.03 up to 12,000 units, plus $0.01 per further 12,000, up to 48,000 units ($0.06). Payment works exactly as for /v1/check.
+
+Verdict: `{"accept": false, "summary": "...", "requirements": [{"requirement": "List 5 competitors", "met": "partly", "evidence": "Counted 3 items; the task asks for exactly 5 items.", "subjective": false, "blocking": true}], "injection_suspected": false}`. `accept` is true only when no requirement is blocking: `no` and `partly` always block, `cannot_tell` blocks unless the requirement is subjective. The receipt body has `kind: "accept"`, `task` and `deliverable` (`sha256`, `chars`), `reference`, the payment, and `review` (`accept`, `requirements`, `blocking`, `verdict_sha256`, model, prompt version).
+
 ## GET /v1/checks/{job_id} (free)
 
 Header: `Authorization: Bearer <result_token>` (the token is not accepted in the URL). Returns the same shape as the order response. `status` is `done`, `pending`, `unserved` (refund owed, recorded in the ledger), or `rejected` (payment not confirmed on chain; no review ran). 404 for an unknown job or wrong token.

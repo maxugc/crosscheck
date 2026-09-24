@@ -11,7 +11,7 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.2.1" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.3.0" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -41,6 +41,22 @@ serveStdio(() => {
     },
     async ({ draft, moltbook_identity }) =>
       text(await client.order(draft, moltbook_identity ? { moltbookIdentity: moltbook_identity } : {})),
+  );
+
+  server.registerTool(
+    "accept",
+    {
+      title: "Check work another agent handed back (paid)",
+      description:
+        "Pays about $0.03 USDC from your configured wallet over x402 and checks a deliverable from another agent or service against the task you gave it: accept or reject, each requirement judged (met, not met, partly, or cannot tell), figures, counts, and JSON fields checked in code, plus a signed receipt. Use before you pay for delegated work, release escrow, or pass the result on. If status is pending, call result later with job_id and result_token.",
+      inputSchema: z.object({
+        task: z.string().min(1).max(200_000).describe("The task you gave, with every requirement, exactly as sent"),
+        deliverable: z.string().min(1).max(200_000).describe("What came back, exactly as received"),
+        reference: z.string().max(200).optional().describe("Optional order id or transaction hash to record on the receipt"),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ task, deliverable, reference }) => text(await client.accept(task, deliverable, reference ? { reference } : {})),
   );
 
   server.registerTool(
