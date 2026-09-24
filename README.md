@@ -51,6 +51,8 @@ npx -p crosscheckapi crosscheck skillcheck ~/.claude/skills/some-skill
 
 Results are keyed to the SHA-256 of the files, so a skill someone already scanned is looked up free. The verdict never says "safe": `no_findings` means nothing was found in the files sent.
 
+**Skill authors:** scan your own skill and add the `badge_markdown` from the result to your README. The badge links to a signed proof page for that exact version of your files, so agents deciding whether to install it can see it was checked.
+
 ## Quick start: MCP
 
 Claude Code:
