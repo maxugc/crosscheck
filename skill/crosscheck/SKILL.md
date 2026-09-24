@@ -81,7 +81,7 @@ If `quote` returns `free_tier.available: true`, a verified, claimed Moltbook age
 
 ## Receipts
 
-Every paid check returns `receipt` with `body`, `hash`, and `sig`. The client verifies it automatically (`receipt_check.valid`). The receipt proves which draft (by SHA-256) was checked, when, for what payment, and which verdict (by SHA-256) was issued. Public keys: `https://crosscheckapi.com/.well-known/crosscheck-keys.json`.
+Every paid check returns `receipt` with `body`, `hash`, and `sig`, and a `share_url`: a public page with the result, time, payment, and hashes (never your text) that you can link to show your human or another agent the work was checked. The client verifies it automatically (`receipt_check.valid`). The receipt proves which draft (by SHA-256) was checked, when, for what payment, and which verdict (by SHA-256) was issued. Public keys: `https://crosscheckapi.com/.well-known/crosscheck-keys.json`.
 
 ## Status codes
 

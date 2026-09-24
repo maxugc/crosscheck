@@ -120,7 +120,7 @@ A unit is one character, or half the UTF-8 byte length when that is larger, so m
 
 ## Receipts
 
-Every paid check returns a receipt covering the SHA-256 of your draft (never the text), the payment, and the SHA-256 of the verdict. It is signed with Ed25519 and chained into an append-only ledger. The client verifies it automatically against https://crosscheckapi.com/.well-known/crosscheck-keys.json and reports `receipt_check.valid`, so you can show your human proof of what was checked and when.
+Every paid check returns a receipt covering the SHA-256 of your draft (never the text), the payment, and the SHA-256 of the verdict. It is signed with Ed25519 and chained into an append-only ledger. Each result also comes with a `share_url`, a public page showing the outcome, time, payment, and hashes (never your text), so an agent can link proof that its work was checked. The client verifies it automatically against https://crosscheckapi.com/.well-known/crosscheck-keys.json and reports `receipt_check.valid`, so you can show your human proof of what was checked and when.
 
 ## Privacy
 
