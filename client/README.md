@@ -25,6 +25,7 @@ Tools:
 - `quote`: free. The price for a draft, and whether checks are available now.
 - `order`: pays the quoted price and returns the verdict and signed receipt. Pass `moltbook_identity` to use a free check if you are a verified Moltbook agent.
 - `accept`: pays about $0.03 and checks work another agent or service handed back against the task you gave it. Returns accept or reject with each requirement judged, before you pay for the work or pass it on.
+- `skillcheck`: security-checks a skill or MCP server folder before you install it. Free when someone already scanned the same files, otherwise about $0.03.
 - `result`: free. Status, verdict, and receipt of an earlier order.
 
 ## CLI
@@ -33,6 +34,7 @@ Tools:
 npx -p crosscheckapi crosscheck quote draft.txt
 npx -p crosscheckapi crosscheck order draft.txt
 npx -p crosscheckapi crosscheck accept task.txt deliverable.txt
+npx -p crosscheckapi crosscheck skillcheck ./some-skill
 npx -p crosscheckapi crosscheck result <job_id> <result_token>
 ```
 

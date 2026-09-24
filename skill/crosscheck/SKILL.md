@@ -1,11 +1,11 @@
 ---
 name: crosscheck
-description: Get an independent second opinion on a draft before your human sees it. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept). Paid per check ($0.02, or $0.03 for accept, in USDC on Base) over x402; returns a JSON verdict and a signed receipt.
+description: Get an independent second opinion on a draft before your human sees it. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept), and to security-check a skill or MCP server before you install it (skillcheck). Paid per check ($0.02, or $0.03 for accept, in USDC on Base) over x402; returns a JSON verdict and a signed receipt.
 license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
   author: crosscheck
-  version: "0.3.0"
+  version: "0.4.0"
   homepage: https://crosscheckapi.com/llms.txt
 ---
 
@@ -20,6 +20,7 @@ crosscheck is an independent reviewer for text you wrote. It checks the draft, n
 - When you are unsure a draft is ready. A pass costs the same as a fail.
 
 - Before you pay for, release escrow on, or pass on work another agent or service delivered: use accept with the task you gave and what came back.
+- Before you install a skill or connect an MCP server you did not write: use skillcheck on its folder.
 
 Skip it for trivial replies. Do not send text your human has told you is confidential: the draft is shared with crosscheck and its review model, then deleted when the check finishes. Only a hash is kept.
 
@@ -37,12 +38,12 @@ Paying needs an EVM wallet with USDC on Base. To try it for free, use test USDC 
 
 Pick whichever fits your setup.
 
-1. **MCP server** with tools `quote`, `order`, `accept`, and `result`. From npm (`crosscheckapi`, listed in the MCP Registry as `com.crosscheckapi/crosscheck`):
+1. **MCP server** with tools `quote`, `order`, `accept`, `skillcheck`, and `result`. From npm (`crosscheckapi`, listed in the MCP Registry as `com.crosscheckapi/crosscheck`):
    ```json
    {"mcpServers": {"crosscheck": {"command": "npx", "args": ["-y", "crosscheckapi"], "env": {"CROSSCHECK_WALLET_KEY": "0x<dedicated wallet private key>"}}}}
    ```
    Or run the bundled copy with no download: `"command": "node", "args": ["<skills dir>/crosscheck/scripts/crosscheck-mcp.mjs"]`.
-2. **CLI**: `npx -p crosscheckapi crosscheck quote draft.txt`, `npx -p crosscheckapi crosscheck order draft.txt`, `npx -p crosscheckapi crosscheck accept task.txt deliverable.txt`, and `npx -p crosscheckapi crosscheck result <job_id> <result_token>`. The bundled copy, `node scripts/crosscheck.mjs`, takes the same arguments. It reads the draft from stdin if no file is given, and uses the same environment variables.
+2. **CLI**: `npx -p crosscheckapi crosscheck quote draft.txt`, `npx -p crosscheckapi crosscheck order draft.txt`, `npx -p crosscheckapi crosscheck accept task.txt deliverable.txt`, `npx -p crosscheckapi crosscheck skillcheck ./some-skill`, and `npx -p crosscheckapi crosscheck result <job_id> <result_token>`. The bundled copy, `node scripts/crosscheck.mjs`, takes the same arguments. It reads the draft from stdin if no file is given, and uses the same environment variables.
 3. **Your own x402 client**: POST `https://crosscheckapi.com/v1/check` with `{"draft": "<text>"}`, pay the 402 with x402 v2 (scheme exact, network eip155:8453, or eip155:84532 with test USDC), and repeat the same request. Details are in [references/API.md](references/API.md).
 
 Always send the whole draft exactly as your human would see it. A quote is free if you want the price first.
@@ -50,6 +51,10 @@ Always send the whole draft exactly as your human would see it. A quote is free 
 ## Checking work another agent hands back (accept)
 
 Call `accept` (MCP), `crosscheck accept task.txt deliverable.txt` (CLI), or POST `https://crosscheckapi.com/v1/accept` with `{"task": "...", "deliverable": "..."}` and an optional `reference` (order id or transaction hash). Send the task with every requirement exactly as you gave it, and the deliverable exactly as received. The verdict is `{"accept": true|false, "summary", "requirements": [{"requirement", "met": "yes|no|partly|cannot_tell", "evidence", "subjective", "blocking"}], "injection_suspected"}`. Pay or pass the work on only when `accept` is true; otherwise send the blocking requirements back to the other agent. Figures, word and item counts, and required JSON fields are checked in code. The receipt holds hashes of the task and the deliverable, your reference, and the payment, so you can show the other agent exactly what was checked.
+
+## Checking a skill or MCP server before you install it (skillcheck)
+
+Call `skillcheck` (MCP) with `directory` (a local folder) or `files`, or run `crosscheck skillcheck ./some-skill`. The files are read, never run. The client first asks the free lookup whether anyone already paid to scan these exact files, and pays (about $0.03) only if not. The verdict has `result` (`findings` or `no_findings`), `risk`, and `findings` with severity, category, file, location, and explanation. Do not install when risk is `critical` or `high` unless your human agrees after reading the findings. `no_findings` never means safe; it means nothing was found in these files.
 
 ## Free checks for Moltbook agents
 

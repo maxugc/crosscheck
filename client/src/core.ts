@@ -1,6 +1,8 @@
 import { decodePaymentResponseHeader, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
 import { createHash, createPublicKey, verify } from "node:crypto";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative, sep } from "node:path";
 import { privateKeyToAccount } from "viem/accounts";
 
 /**
@@ -136,6 +138,27 @@ export class CrosscheckClient {
     return out;
   }
 
+  /** Free. The latest paid skillcheck of this exact bundle, if anyone has scanned it. */
+  async skillLookup(bundleSha: string): Promise<Json> {
+    if (!/^[0-9a-f]{64}$/.test(bundleSha)) throw new Error("bundle hash must be 64 lowercase hex characters");
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/skillcheck/${bundleSha}`);
+    return { http_status: res.status, ...((await res.json()) as Json) };
+  }
+
+  /**
+   * Security review of a skill or MCP server's files before you install or connect it. Checks the
+   * free lookup first and pays (about $0.03) only when nobody has scanned these exact files, unless
+   * fresh is true. Never says safe: "no_findings" means nothing was found in these files.
+   */
+  async skillcheck(files: SkillFile[], opts: { fresh?: boolean } = {}): Promise<Json> {
+    if (!opts.fresh) {
+      const known = await this.skillLookup(bundleSha256(files));
+      if (known.found === true) return { ...known, from_lookup: true };
+    }
+    if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
+    return this.paidPost("/v1/skillcheck", { files }, {});
+  }
+
   /** Free. Status, verdict, and receipt of an earlier order. */
   async result(jobId: string, resultToken: string): Promise<Json> {
     if (!/^chk_[0-9a-f]{32}$/.test(jobId)) throw new Error("job_id looks wrong; expected chk_ followed by 32 hex characters");
@@ -179,4 +202,42 @@ export function clientFromEnv(env: NodeJS.ProcessEnv = process.env): CrosscheckC
     // CROSSCHECK_NETWORKS: comma-separated allowlist in order of preference, e.g. "eip155:84532" for testnet only.
     ...(env.CROSSCHECK_NETWORKS ? { networks: env.CROSSCHECK_NETWORKS.split(",").map((x) => x.trim()).filter(Boolean) } : {}),
   });
+}
+
+export interface SkillFile {
+  path: string;
+  content: string;
+}
+
+/** The service's bundle hash: SHA-256 of the canonical list of {path, sha256}, sorted by path. */
+export function bundleSha256(files: SkillFile[]): string {
+  const entries = files.map((f) => ({ path: f.path, sha256: sha256(f.content) })).sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+  return sha256(canonicalize(entries));
+}
+
+const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "__pycache__", ".venv", "venv", ".next", "target"]);
+const MAX_FILES = 50;
+const MAX_FILE_BYTES = 200_000;
+
+/** Read a skill or server folder's text files (skipping dependencies, build output, and binaries). */
+export function readSkillDir(dir: string): SkillFile[] {
+  const out: SkillFile[] = [];
+  const walk = (d: string) => {
+    for (const name of readdirSync(d).sort()) {
+      const full = join(d, name);
+      const st = statSync(full);
+      if (st.isDirectory()) {
+        if (!SKIP_DIRS.has(name)) walk(full);
+        continue;
+      }
+      if (!st.isFile() || st.size > MAX_FILE_BYTES) continue;
+      const buf = readFileSync(full);
+      if (buf.includes(0)) continue; // binary
+      out.push({ path: relative(dir, full).split(sep).join("/"), content: buf.toString("utf8") });
+      if (out.length > MAX_FILES) throw new Error(`${dir} has more than ${MAX_FILES} text files; send the ones that run or instruct the agent`);
+    }
+  };
+  walk(dir);
+  if (out.length === 0) throw new Error(`No text files found in ${dir}`);
+  return out;
 }

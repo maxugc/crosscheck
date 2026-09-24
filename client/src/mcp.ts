@@ -4,14 +4,14 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
-import { clientFromEnv } from "./core.js";
+import { clientFromEnv, readSkillDir } from "./core.js";
 
 const client = clientFromEnv();
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.3.0" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.4.0" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -57,6 +57,30 @@ serveStdio(() => {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
     async ({ task, deliverable, reference }) => text(await client.accept(task, deliverable, reference ? { reference } : {})),
+  );
+
+  server.registerTool(
+    "skillcheck",
+    {
+      title: "Security-check a skill or MCP server before installing it",
+      description:
+        "Reviews an agent skill or MCP server's files before you install or connect it: downloads piped into a shell, credential and wallet reads, secrets sent over the network, persistence, hidden Unicode, and prompt injection aimed at you or at the scanner. The files are read, never run. Checks the free lookup first; pays about $0.03 USDC only when nobody has scanned these exact files. Pass directory (a local folder) or files. Never says safe: no_findings means nothing was found in these files.",
+      inputSchema: z.object({
+        directory: z.string().optional().describe("Local folder of the skill or server to scan (dependencies and binaries are skipped)"),
+        files: z
+          .array(z.object({ path: z.string(), content: z.string() }))
+          .max(50)
+          .optional()
+          .describe("The files to scan, if you have them in hand instead of a folder"),
+        fresh: z.boolean().optional().describe("Pay for a new scan even if these exact files were scanned before"),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ directory, files, fresh }) => {
+      const input = files ?? (directory ? readSkillDir(directory) : undefined);
+      if (!input) throw new Error("Pass directory or files");
+      return text(await client.skillcheck(input, fresh ? { fresh } : {}));
+    },
   );
 
   server.registerTool(

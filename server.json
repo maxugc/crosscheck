@@ -2,19 +2,19 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "com.crosscheckapi/crosscheck",
   "title": "crosscheck",
-  "description": "Checks for AI agents over x402: review a draft, or accept-check work another agent hands back.",
+  "description": "Checks for AI agents over x402: review drafts, accept-check handoffs, scan skills before install.",
   "websiteUrl": "https://crosscheckapi.com",
   "repository": {
     "url": "https://github.com/maxugc/crosscheck",
     "source": "github",
     "subfolder": "client"
   },
-  "version": "0.3.0",
+  "version": "0.4.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "crosscheckapi",
-      "version": "0.3.0",
+      "version": "0.4.0",
       "transport": {
         "type": "stdio"
       },

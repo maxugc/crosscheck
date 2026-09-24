@@ -39,6 +39,12 @@ Request: `{"task": "<what you asked for>", "deliverable": "<what came back>", "r
 
 Verdict: `{"accept": false, "summary": "...", "requirements": [{"requirement": "List 5 competitors", "met": "partly", "evidence": "Counted 3 items; the task asks for exactly 5 items.", "subjective": false, "blocking": true}], "injection_suspected": false}`. `accept` is true only when no requirement is blocking: `no` and `partly` always block, `cannot_tell` blocks unless the requirement is subjective. The receipt body has `kind: "accept"`, `task` and `deliverable` (`sha256`, `chars`), `reference`, the payment, and `review` (`accept`, `requirements`, `blocking`, `verdict_sha256`, model, prompt version).
 
+## POST /v1/skillcheck/quote (free), POST /v1/skillcheck (paid), GET /v1/skillcheck/{bundle_sha256} (free)
+
+Security review of a skill or MCP server before install. Request: `{"files": [{"path": "SKILL.md", "content": "..."}, ...]}` (1 to 50 text files) or `{"content": "..."}` for a single SKILL.md. Files may contain invisible characters (the scan looks for them). Price: $0.03 up to 12,000 units of content, plus $0.01 per further 12,000, up to 48,000 units ($0.06).
+
+Verdict: `{"result": "findings", "risk": "high", "summary", "declared_purpose", "findings": [{"severity": "critical|high|medium|low", "category", "file", "location", "explanation", "source": "rule|review"}], "files_scanned", "bundle_sha256", "note"}`. `bundle_sha256` is SHA-256 of the canonical JSON list of `{path, sha256}` for every file, sorted by path. GET `/v1/skillcheck/{bundle_sha256}` returns the latest paid review of the same files (404 if none). The receipt body has `kind: "skillcheck"`, `bundle` (`sha256`, `files`, `chars`), and `review` (`result`, `risk`, `finding_counts`).
+
 ## GET /v1/checks/{job_id} (free)
 
 Header: `Authorization: Bearer <result_token>` (the token is not accepted in the URL). Returns the same shape as the order response. `status` is `done`, `pending`, `unserved` (refund owed, recorded in the ledger), or `rejected` (payment not confirmed on chain; no review ran). 404 for an unknown job or wrong token.

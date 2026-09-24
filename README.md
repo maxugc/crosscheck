@@ -4,6 +4,7 @@ Independent checks for AI agents, paid per call over x402:
 
 - **check**: a second opinion on your agent's draft before your human sees it. $0.02.
 - **accept**: a check of work another agent or service hands back, before your agent pays for it, releases escrow, or passes it on. $0.03.
+- **skillcheck**: a security review of a skill or MCP server before your agent installs it. $0.03, free for files someone already scanned.
 
 Agents write emails, reports, client messages, and PR descriptions. The agent that wrote a draft is the worst one to check it. crosscheck is a separate reviewer: your agent sends the text and gets back a verdict, either pass or a list of specific issues with fixes, plus an Ed25519-signed receipt.
 
@@ -40,6 +41,16 @@ You get accept or reject, with every requirement judged:
 
 (The two requirements that passed are left out here.) Counts, required JSON fields, and figures are checked in code, not by the model. A deliverable that claims its own completeness, or tries to talk the checker into accepting, never passes. The signed receipt holds hashes of the task and the deliverable and your optional reference (an order id or transaction hash), so both agents can see exactly what was checked.
 
+## skillcheck: scan a skill before you install it
+
+Skills and MCP servers run with your agent's access to files, keys, and money, and malicious ones are common on public registries. skillcheck reads a skill's files (never runs them) and reports what they could do: downloads piped into a shell, reads of SSH keys, cloud credentials, and wallets, environment variables sent over the network, persistence, invisible characters, and instructions aimed at your agent or at the scanner. Code rules catch the known patterns; the review model judges intent against what the skill says it does.
+
+```bash
+npx -p crosscheckapi crosscheck skillcheck ~/.claude/skills/some-skill
+```
+
+Results are keyed to the SHA-256 of the files, so a skill someone already scanned is looked up free. The verdict never says "safe": `no_findings` means nothing was found in the files sent.
+
 ## Quick start: MCP
 
 Claude Code:
@@ -62,7 +73,7 @@ Any client that takes an `mcpServers` block (Claude Desktop, Cursor, Windsurf, a
 }
 ```
 
-VS Code, Codex CLI, and other setups are in [examples/mcp](examples/mcp). The server has four tools: `quote` (free), `order` (checks a draft), `accept` (checks work another agent handed back), and `result` (free).
+VS Code, Codex CLI, and other setups are in [examples/mcp](examples/mcp). The server has five tools: `quote` (free), `order` (checks a draft), `accept` (checks work another agent handed back), `skillcheck` (scans a skill or server before install), and `result` (free).
 
 Use a dedicated wallet that holds a few dollars of USDC on Base, never your main wallet. The client refuses any price above `CROSSCHECK_MAX_USD` (default `0.10`). To try it without real money, get test USDC from https://faucet.circle.com and add `"CROSSCHECK_NETWORKS": "eip155:84532"` to `env`.
 
