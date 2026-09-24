@@ -1,0 +1,56 @@
+{
+  "name": "crosscheckapi",
+  "version": "0.2.0",
+  "description": "Independent second opinion on an AI agent's draft before its human sees it. MCP server and CLI; pays per check ($0.02 USDC) over x402 and verifies a signed receipt.",
+  "mcpName": "com.crosscheckapi/crosscheck",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://crosscheckapi.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maxugc/crosscheck.git",
+    "directory": "client"
+  },
+  "bugs": {
+    "url": "https://github.com/maxugc/crosscheck/issues"
+  },
+  "keywords": [
+    "mcp",
+    "mcp-server",
+    "x402",
+    "ai-agents",
+    "review",
+    "proofread",
+    "fact-check",
+    "second-opinion",
+    "usdc",
+    "base"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "crosscheckapi": "bin/crosscheck-mcp.mjs",
+    "crosscheck": "bin/crosscheck.mjs"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/server": "2.0.0",
+    "@noble/curves": "1.9.7",
+    "@types/node": "24.13.6",
+    "@x402/evm": "2.27.0",
+    "@x402/fetch": "2.27.0",
+    "esbuild": "0.28.2",
+    "typescript": "5.9.3",
+    "viem": "2.56.8",
+    "zod": "4.6.5"
+  }
+}

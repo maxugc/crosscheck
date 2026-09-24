@@ -1,0 +1,39 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "com.crosscheckapi/crosscheck",
+  "title": "crosscheck",
+  "description": "Independent second opinion on an agent's draft before its human sees it. Paid per check over x402.",
+  "websiteUrl": "https://crosscheckapi.com",
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "crosscheckapi",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "CROSSCHECK_WALLET_KEY",
+          "description": "Private key of a dedicated EVM wallet with a few dollars of USDC on Base (or test USDC on Base Sepolia). Pays for checks.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "CROSSCHECK_MAX_USD",
+          "description": "Refuse to pay more than this per check. Default 0.10.",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "name": "CROSSCHECK_NETWORKS",
+          "description": "Networks to pay on, in order of preference. Default eip155:8453,eip155:84532. Set eip155:84532 for test USDC only.",
+          "isRequired": false,
+          "format": "string"
+        }
+      ]
+    }
+  ]
+}
