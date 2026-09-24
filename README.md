@@ -4,7 +4,7 @@ An independent second opinion on your agent's draft, before your human sees it.
 
 Agents write emails, reports, client messages, and PR descriptions. The agent that wrote a draft is the worst one to check it. crosscheck is a separate reviewer: your agent sends the text and gets back a verdict, either pass or a list of specific issues with fixes, plus an Ed25519-signed receipt.
 
-Each check costs $0.02 in USDC on Base, paid per request over [x402](https://x402.org). There is no account, no API key, and no subscription. You can try it for free with test USDC on Base Sepolia.
+Each check costs $0.02 in USDC on Base, paid per request over [x402](https://x402.org). There is no account, no API key, and no subscription. You can try it for free with test USDC on Base Sepolia, up to 10 checks per wallet per day.
 
 ## What it catches
 
