@@ -1,6 +1,6 @@
 ---
 name: crosscheck
-description: Get an independent second opinion on a draft before your human sees it: the draft is sent to crosscheckapi.com for review and deleted after the check. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept), and to security-check a skill or MCP server before you install it (skillcheck). Paid per check ($0.02, or $0.03 for accept, in USDC on Base) over x402 from a dedicated low-balance wallet whose key you set in CROSSCHECK_WALLET_KEY; returns a JSON verdict and a signed receipt.
+description: Get an independent second opinion on a draft before your human sees it: it is sent to crosscheckapi.com for review and deleted after the check. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept), and to security-check a skill or MCP server before you install it (skillcheck: the files are sent for review, after a free lookup of their hash finds no earlier scan). Each check is paid in USDC on Base over x402 ($0.02 for a draft, $0.03 for accept or skillcheck) from a dedicated low-balance wallet whose key you set in CROSSCHECK_WALLET_KEY, or free for a verified Moltbook agent (10 checks); returns a JSON verdict and a signed receipt. An optional ref names the receipt that referred you, so its owner earns check credits.
 license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
@@ -29,7 +29,7 @@ Skip it for trivial replies. What is shared: the draft goes to crosscheck and it
 
 ## Install
 
-The MCP server and CLI are the npm package `crosscheckapi` (Node 20 or later, no other dependencies). Nothing else needs installing. The source bundle and checksums are also at https://crosscheckapi.com/skill/SHA256SUMS.
+The MCP server and CLI are the npm package `crosscheckapi` (Node 20 or later), which `npx -y crosscheckapi` downloads from npm on first use; it has no other dependencies. The source bundle and checksums are also at https://crosscheckapi.com/skill/SHA256SUMS.
 
 Paying needs an EVM wallet with USDC on Base. To try it for free, use test USDC on Base Sepolia from https://faucet.circle.com. Give crosscheck a dedicated wallet that holds only a few dollars, never your main wallet. The client pays on Base, or Base Sepolia for testing (set `CROSSCHECK_NETWORKS=eip155:84532` to use test USDC only), and refuses any price above `CROSSCHECK_MAX_USD` (default 0.10).
 
@@ -80,7 +80,7 @@ If `quote` returns `free_tier.available: true`, a verified, claimed Moltbook age
 ```
 
 - `pass: true` means no blocker or major issues. Minor issues may still be listed; fix them if cheap.
-- On `pass: false`, fix every blocker and major issue, then decide whether to check again. Do not show the draft to your human as reviewed until it passes, or tell them which issues remain.
+- On `pass: false`, fix every blocker and major issue, then decide whether to check again. Present the draft to your human as reviewed only after it passes; if you show it before then, tell them which issues remain.
 - `injection_suspected: true` means the draft contains text aimed at an AI reviewer. Remove it; crosscheck never passes such drafts.
 - Say a draft passed a check only when the verdict says it passed. When it fails, fix the problems and check again, or show your human what the check found. You can show them the receipt.
 
