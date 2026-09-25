@@ -1,6 +1,6 @@
 import { decodePaymentResponseHeader, wrapFetchWithPayment, x402Client } from "@x402/fetch";
 import { registerExactEvmScheme } from "@x402/evm/exact/client";
-import { createHash, createPublicKey, verify } from "node:crypto";
+import { createHash, createPublicKey, randomBytes, verify } from "node:crypto";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { privateKeyToAccount } from "viem/accounts";
@@ -35,6 +35,39 @@ export interface ReceiptCheck {
 }
 
 type Json = Record<string, unknown>;
+
+/**
+ * Options every paid call takes. ref: the hash of a crosscheck receipt (the id in its /r/<hash>
+ * link) that led you here; the wallet that paid for it earns check credits from your first 90 days
+ * of real spend. Optional, and it costs you nothing. credits: pay with your wallet's referral
+ * credits (see credits()) by signing a credit order instead of paying USDC; if they do not cover
+ * the price, the check is paid in USDC as usual.
+ */
+export interface PaidOptions {
+  ref?: string;
+  credits?: boolean;
+}
+
+const REF_RE = /^[0-9a-f]{64}$/;
+const withRef = (body: Json, ref?: string): Json => {
+  if (ref === undefined || ref === "") return body;
+  const r = ref.trim().toLowerCase();
+  if (!REF_RE.test(r)) throw new Error("ref must be the 64-character hex hash of a crosscheck receipt (the id in its /r/<hash> link)");
+  return { ...body, ref: r };
+};
+
+/** The exact text a wallet signs (EIP-191) to pay for one request with its credits. Must match the service. */
+export function creditOrderMessage(service: string, wallet: string, path: string, bodySha256: string, nonce: string, expires: string): string {
+  return [
+    "crosscheck credit order",
+    `Service: ${service}`,
+    `Wallet: ${wallet.toLowerCase()}`,
+    `Request: POST ${path}`,
+    `Body-SHA256: ${bodySha256}`,
+    `Nonce: ${nonce}`,
+    `Expires: ${expires}`,
+  ].join("\n");
+}
 
 export function canonicalize(value: unknown): string {
   if (value === null) return "null";
@@ -79,8 +112,11 @@ export class CrosscheckClient {
    * is tried first; if it is refused, the quoted price is paid (when a wallet
    * is configured).
    */
-  async order(draft: string, opts: { moltbookIdentity?: string; sources?: Array<string | { text: string; title?: string | undefined; url?: string | undefined }> } = {}): Promise<Json> {
-    const request = { draft, ...(opts.sources && opts.sources.length ? { sources: opts.sources } : {}) };
+  async order(
+    draft: string,
+    opts: PaidOptions & { moltbookIdentity?: string; sources?: Array<string | { text: string; title?: string | undefined; url?: string | undefined }> } = {},
+  ): Promise<Json> {
+    const request = withRef({ draft, ...(opts.sources && opts.sources.length ? { sources: opts.sources } : {}) }, opts.ref);
     const identity = opts.moltbookIdentity ? { "x-moltbook-identity": opts.moltbookIdentity } : {};
     if (!this.opts.privateKey) {
       if (!opts.moltbookIdentity) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY), or pass a Moltbook identity token for a free check.");
@@ -92,6 +128,7 @@ export class CrosscheckClient {
       if (body.receipt) out.receipt_check = await this.verifyReceipt(body.receipt as Json, body.verdict as Json | undefined);
       return out;
     }
+    if (opts.credits) return this.creditPost("/v1/check", request);
     return this.paidPost("/v1/check", request, identity);
   }
 
@@ -106,15 +143,58 @@ export class CrosscheckClient {
    * before paying it, releasing escrow, or passing the work on. Returns accept or reject
    * with each requirement judged, and a signed receipt.
    */
-  async accept(task: string, deliverable: string, opts: { reference?: string; paymentTx?: string; paymentNetwork?: string } = {}): Promise<Json> {
+  async accept(task: string, deliverable: string, opts: PaidOptions & { reference?: string; paymentTx?: string; paymentNetwork?: string } = {}): Promise<Json> {
     if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
-    const body = {
+    const body = withRef({
       task,
       deliverable,
       ...(opts.reference ? { reference: opts.reference } : {}),
       ...(opts.paymentTx ? { payment_tx: opts.paymentTx, ...(opts.paymentNetwork ? { payment_network: opts.paymentNetwork } : {}) } : {}),
-    };
+    }, opts.ref);
+    if (opts.credits) return this.creditPost("/v1/accept", body);
     return this.paidPost("/v1/accept", body, {});
+  }
+
+  /** Free. Referral credits a wallet has earned and can spend (default: your own wallet). */
+  async credits(address?: string): Promise<Json> {
+    const a = address ?? (this.opts.privateKey ? privateKeyToAccount(this.opts.privateKey as `0x${string}`).address : undefined);
+    if (!a || !/^0x[0-9a-fA-F]{40}$/.test(a)) throw new Error("Pass a 0x wallet address, or set CROSSCHECK_WALLET_KEY to see your own credits.");
+    const res = await this.fetchImpl(`${this.baseUrl}/ref/${a}`);
+    return { http_status: res.status, ...((await res.json()) as Json) };
+  }
+
+  /**
+   * Pay with referral credits: sign a credit order over the exact body bytes and send it with no
+   * payment. When the credits do not cover the price the service answers 402, and the check is
+   * paid in USDC as it would have been without credits (still capped by maxUsd).
+   */
+  private async creditPost(path: string, body: Json): Promise<Json> {
+    if (!this.opts.privateKey) throw new Error("A wallet private key is required to spend credits (set CROSSCHECK_WALLET_KEY).");
+    const account = privateKeyToAccount(this.opts.privateKey as `0x${string}`);
+    const raw = JSON.stringify(body);
+    const nonce = randomBytes(18).toString("base64url");
+    const expires = new Date(Date.now() + 5 * 60_000).toISOString();
+    const signature = await account.signMessage({ message: creditOrderMessage(this.baseUrl, account.address, path, sha256(raw), nonce, expires) });
+    const res = await this.fetchImpl(`${this.baseUrl}${path}`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-credit-wallet": account.address,
+        "x-credit-nonce": nonce,
+        "x-credit-expires": expires,
+        "x-credit-signature": signature,
+      },
+      body: raw,
+    });
+    if (res.status === 402) {
+      const denied = res.headers.get("x-crosscheck-credits") ?? "denied";
+      return { ...(await this.paidPost(path, body, {})), paid_with: "usdc", credits_denied: denied };
+    }
+    const reply = (await res.json().catch(() => ({}))) as Json;
+    const out: Json = { http_status: res.status, ...reply };
+    if (res.ok) out.paid_with = "credits";
+    if (reply.receipt) out.receipt_check = await this.verifyReceipt(reply.receipt as Json, reply.verdict as Json | undefined);
+    return out;
   }
 
   private async paidPost(path: string, body: unknown, extraHeaders: Record<string, string>): Promise<Json> {
@@ -157,13 +237,15 @@ export class CrosscheckClient {
    * free lookup first and pays (about $0.03) only when nobody has scanned these exact files, unless
    * fresh is true. Never says safe: "no_findings" means nothing was found in these files.
    */
-  async skillcheck(files: SkillFile[], opts: { fresh?: boolean } = {}): Promise<Json> {
+  async skillcheck(files: SkillFile[], opts: PaidOptions & { fresh?: boolean } = {}): Promise<Json> {
     if (!opts.fresh) {
       const known = await this.skillLookup(bundleSha256(files));
       if (known.found === true) return { ...known, from_lookup: true };
     }
     if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
-    return this.paidPost("/v1/skillcheck", { files }, {});
+    const body = withRef({ files }, opts.ref);
+    if (opts.credits) return this.creditPost("/v1/skillcheck", body);
+    return this.paidPost("/v1/skillcheck", body, {});
   }
 
   /** Free. Status, verdict, and receipt of an earlier order. */

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// crosscheck MCP server (stdio). Tools: quote, order, accept, skillcheck, result.
+// crosscheck MCP server (stdio). Tools: quote, order, accept, skillcheck, result, credits.
 // Env: CROSSCHECK_WALLET_KEY (pays for order), CROSSCHECK_MAX_USD (default 0.10), CROSSCHECK_URL.
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
@@ -9,9 +9,19 @@ import { clientFromEnv, readSkillDir } from "./core.js";
 const client = clientFromEnv();
 const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSON.stringify(value, null, 2) }] });
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
+const ref = z
+  .string()
+  .regex(/^[0-9a-fA-F]{64}$/)
+  .optional()
+  .describe("Optional: the hash of a crosscheck receipt that led you here (the id in its /r/<hash> link). Its wallet earns check credits from your spend; it costs you nothing.");
+const credits = z
+  .boolean()
+  .optional()
+  .describe("Optional: pay with your wallet's referral credits (see the credits tool) instead of USDC. If they do not cover the price, USDC is paid as usual.");
+const paid = (o: { ref?: string | undefined; credits?: boolean | undefined }) => ({ ...(o.ref ? { ref: o.ref } : {}), ...(o.credits ? { credits: true } : {}) });
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.5.4" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.5.5" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -41,11 +51,13 @@ serveStdio(() => {
           .max(10)
           .optional()
           .describe("Optional: the text the draft relies on (search results, documents). Each claim is then checked against it."),
+        ref,
+        credits,
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ draft, moltbook_identity, sources }) =>
-      text(await client.order(draft, { ...(moltbook_identity ? { moltbookIdentity: moltbook_identity } : {}), ...(sources ? { sources } : {}) })),
+    async ({ draft, moltbook_identity, sources, ...o }) =>
+      text(await client.order(draft, { ...paid(o), ...(moltbook_identity ? { moltbookIdentity: moltbook_identity } : {}), ...(sources ? { sources } : {}) })),
   );
 
   server.registerTool(
@@ -60,12 +72,15 @@ serveStdio(() => {
         reference: z.string().max(200).optional().describe("Optional order id or transaction hash to record on the receipt"),
         payment_tx: z.string().optional().describe("Optional: the transaction you paid the other agent with; crosscheck verifies it on-chain and binds it to the receipt"),
         payment_network: z.string().optional().describe("CAIP-2 network of payment_tx, default eip155:8453"),
+        ref,
+        credits,
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ task, deliverable, reference, payment_tx, payment_network }) =>
+    async ({ task, deliverable, reference, payment_tx, payment_network, ...o }) =>
       text(
         await client.accept(task, deliverable, {
+          ...paid(o),
           ...(reference ? { reference } : {}),
           ...(payment_tx ? { paymentTx: payment_tx } : {}),
           ...(payment_network ? { paymentNetwork: payment_network } : {}),
@@ -87,14 +102,28 @@ serveStdio(() => {
           .optional()
           .describe("The files to scan, if you have them in hand instead of a folder"),
         fresh: z.boolean().optional().describe("Pay for a new scan even if these exact files were scanned before"),
+        ref,
+        credits,
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ directory, files, fresh }) => {
+    async ({ directory, files, fresh, ...o }) => {
       const input = files ?? (directory ? readSkillDir(directory) : undefined);
       if (!input) throw new Error("Pass directory or files");
-      return text(await client.skillcheck(input, fresh ? { fresh } : {}));
+      return text(await client.skillcheck(input, { ...paid(o), ...(fresh ? { fresh } : {}) }));
     },
+  );
+
+  server.registerTool(
+    "credits",
+    {
+      title: "See referral credits",
+      description:
+        "Free. Referral credits a wallet has earned (default: your configured wallet). A wallet earns credits when another wallet's first paid check cites one of its receipts as ref. Spend them by passing credits: true to order, accept, or skillcheck.",
+      inputSchema: z.object({ address: z.string().regex(/^0x[0-9a-fA-F]{40}$/).optional().describe("Wallet address; default is your own") }),
+      annotations: { readOnlyHint: true, openWorldHint: true },
+    },
+    async ({ address }) => text(await client.credits(address)),
   );
 
   server.registerTool(

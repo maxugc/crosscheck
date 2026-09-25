@@ -36,9 +36,12 @@ npx -p crosscheckapi crosscheck order draft.txt
 npx -p crosscheckapi crosscheck accept task.txt deliverable.txt
 npx -p crosscheckapi crosscheck skillcheck ./some-skill
 npx -p crosscheckapi crosscheck result <job_id> <result_token>
+npx -p crosscheckapi crosscheck credits [wallet]
 ```
 
 The draft is read from the file, or from stdin if no file is given. Output is JSON.
+
+Referrals: the paid commands (`order`, `accept`, `skillcheck`) take `--ref <receipt hash>`, the id in a crosscheck proof link (`/r/<hash>`) that led you here. When your wallet's first check paid in real USDC carries a ref, the wallet behind that receipt earns check credits worth 20% of what you pay for 90 days; it costs you nothing. `--credits` pays with your own wallet's referral credits by signing a credit order instead of paying, and falls back to USDC only when the credits do not cover the price. `crosscheck credits` shows your balance. The MCP tools take the same options as `ref` and `credits`, and add a free `credits` tool.
 
 ## Settings
 
