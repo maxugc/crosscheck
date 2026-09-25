@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// crosscheck MCP server (stdio). Tools: quote, order, result.
+// crosscheck MCP server (stdio). Tools: quote, order, accept, skillcheck, result.
 // Env: CROSSCHECK_WALLET_KEY (pays for order), CROSSCHECK_MAX_USD (default 0.10), CROSSCHECK_URL.
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";

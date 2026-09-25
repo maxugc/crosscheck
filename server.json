@@ -9,7 +9,7 @@
     "source": "github",
     "subfolder": "client"
   },
-  "version": "0.5.1",
+  "version": "0.5.2",
   "packages": [
     {
       "registryType": "npm",
@@ -39,6 +39,12 @@
           "format": "string"
         }
       ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://crosscheckapi.com/mcp"
     }
   ]
 }
