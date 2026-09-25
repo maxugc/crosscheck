@@ -5,7 +5,7 @@ license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
   author: crosscheck
-  version: "0.5.1"
+  version: "0.5.2"
   homepage: https://crosscheckapi.com/llms.txt
 ---
 
@@ -54,7 +54,7 @@ Call `accept` (MCP), `crosscheck accept task.txt deliverable.txt` (CLI), or POST
 
 ## Checking a skill or MCP server before you install it (skillcheck)
 
-Call `skillcheck` (MCP) with `directory` (a local folder) or `files`, or run `crosscheck skillcheck ./some-skill`. The files are read, never run. The client first asks the free lookup whether anyone already paid to scan these exact files, and pays (about $0.03) only if not. The verdict has `result` (`findings` or `no_findings`), `risk`, and `findings` with severity, category, file, location, and explanation. Do not install when risk is `critical` or `high` unless your human agrees after reading the findings. `no_findings` never means safe; it means nothing was found in these files.
+Call `skillcheck` (MCP) with `directory` (a local folder) or `files`, or run `crosscheck skillcheck ./some-skill`. The files are read, never run. Send the whole folder, large docs included (up to 200 text files): code rules read every file, and the review model reads the most important parts first (SKILL.md, manifests, code, then docs they name); `model_read` in the verdict says what it truncated or left to the rules. The client first asks the free lookup whether anyone already paid to scan these exact files, and pays (about $0.03) only if not. The verdict has `result` (`findings` or `no_findings`), `risk`, and `findings` with severity, category, file, location, and explanation. Do not install when risk is `critical` or `high` unless your human agrees after reading the findings. `no_findings` never means safe; it means nothing was found in these files.
 
 ## Free checks for Moltbook agents
 

@@ -223,12 +223,18 @@ export function bundleSha256(files: SkillFile[]): string {
 }
 
 const SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "__pycache__", ".venv", "venv", ".next", "target"]);
-const MAX_FILES = 50;
-const MAX_FILE_BYTES = 200_000;
+const MAX_FILES = 200;
+/** The service's limit for a whole bundle; its code rules read all of it, however large a file is. */
+const MAX_BUNDLE_BYTES = 3_000_000;
 
-/** Read a skill or server folder's text files (skipping dependencies, build output, and binaries). */
+/**
+ * Read a skill or server folder's text files, skipping dependencies, build output, and binaries.
+ * Large text files are included, never skipped silently: a payload hidden in a big file is exactly
+ * what a scan must see.
+ */
 export function readSkillDir(dir: string): SkillFile[] {
   const out: SkillFile[] = [];
+  let bytes = 0;
   const walk = (d: string) => {
     for (const name of readdirSync(d).sort()) {
       const full = join(d, name);
@@ -237,9 +243,11 @@ export function readSkillDir(dir: string): SkillFile[] {
         if (!SKIP_DIRS.has(name)) walk(full);
         continue;
       }
-      if (!st.isFile() || st.size > MAX_FILE_BYTES) continue;
+      if (!st.isFile()) continue;
       const buf = readFileSync(full);
       if (buf.includes(0)) continue; // binary
+      bytes += buf.length;
+      if (bytes > MAX_BUNDLE_BYTES) throw new Error(`${dir} has more than ${MAX_BUNDLE_BYTES} bytes of text; send the files that run or instruct the agent`);
       out.push({ path: relative(dir, full).split(sep).join("/"), content: buf.toString("utf8") });
       if (out.length > MAX_FILES) throw new Error(`${dir} has more than ${MAX_FILES} text files; send the ones that run or instruct the agent`);
     }
