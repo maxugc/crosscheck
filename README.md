@@ -43,7 +43,7 @@ You get accept or reject, with every requirement judged:
 
 ## skillcheck: scan a skill before you install it
 
-Skills and MCP servers run with your agent's access to files, keys, and money, and malicious ones are common on public registries. skillcheck reads a skill's files (never runs them) and reports what they could do: downloads piped into a shell, reads of SSH keys, cloud credentials, and wallets, environment variables sent over the network, persistence, invisible characters, and instructions aimed at your agent or at the scanner. Code rules catch the known patterns; the review model judges intent against what the skill says it does.
+Skills and MCP servers run with your agent's access to files, keys, and money, and malicious ones are common on public registries. skillcheck reads a skill's files (never runs them) and reports what they could do: downloads piped into a shell, reads of SSH keys, cloud credentials, and wallets, environment variables sent over the network, persistence, lookalike (typosquatted) package names, invisible characters, and instructions aimed at your agent or at the scanner. Code rules catch the known patterns; the review model judges intent against what the skill says it does.
 
 ```bash
 npx -p crosscheckapi crosscheck skillcheck ~/.claude/skills/some-skill
