@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// crosscheck client, bundled from https://crosscheckapi.com. Source: client/src in the crosscheck repository.
+// crosscheck client (npm package crosscheckapi), minified with esbuild from the open source client/src at https://github.com/maxugc/crosscheck. Rebuild it with `node client/build.mjs` in that repository; the skill's SHA256SUMS lists the hashes.
 import { createRequire as __crosscheckCreateRequire } from 'node:module';
 const require = __crosscheckCreateRequire(import.meta.url);
 var Px=Object.defineProperty;var R=(e,t,r)=>()=>{if(r)throw r[0];try{return e&&(t=e(e=0)),t}catch(n){throw r=[n],n}};var ea=(e,t)=>{for(var r in t)Px(e,r,{get:t[r],enumerable:!0})};var h0,y0=R(()=>{h0="1.2.3"});var Ae,ds=R(()=>{y0();Ae=class e extends Error{constructor(t,r={}){let n=r.cause instanceof e?r.cause.details:r.cause?.message?r.cause.message:r.details,o=r.cause instanceof e&&r.cause.docsPath||r.docsPath,s=[t||"An error occurred.","",...r.metaMessages?[...r.metaMessages,""]:[],...o?[`Docs: https://abitype.dev${o}`]:[],...n?[`Details: ${n}`]:[],`Version: abitype@${h0}`].join(`

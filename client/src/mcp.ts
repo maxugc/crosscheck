@@ -11,7 +11,7 @@ const text = (value: unknown) => ({ content: [{ type: "text" as const, text: JSO
 const draft = z.string().min(1).max(200_000).describe("The full text you want checked, exactly as your human would see it");
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.5.2" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.5.4" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",

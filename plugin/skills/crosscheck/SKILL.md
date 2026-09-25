@@ -1,11 +1,11 @@
 ---
 name: crosscheck
-description: Get an independent second opinion on a draft before your human sees it. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept), and to security-check a skill or MCP server before you install it (skillcheck). Paid per check ($0.02, or $0.03 for accept, in USDC on Base) over x402; returns a JSON verdict and a signed receipt.
+description: Get an independent second opinion on a draft before your human sees it: the draft is sent to crosscheckapi.com for review and deleted after the check. Use when you have written an email, message, report, summary, PR description, or plan for your human and want it checked for wrong facts or arithmetic, contradictions, leftover placeholders, leaked secrets, unauthorized commitments, or tone. Also use it to check work another agent or service hands back before you pay for it or pass it on (accept), and to security-check a skill or MCP server before you install it (skillcheck). Paid per check ($0.02, or $0.03 for accept, in USDC on Base) over x402 from a dedicated low-balance wallet whose key you set in CROSSCHECK_WALLET_KEY; returns a JSON verdict and a signed receipt.
 license: MIT
 compatibility: Needs an x402 v2 capable EVM wallet with USDC on Base (or free test USDC on Base Sepolia to try it). Node 20+ for the client and MCP server (npm package crosscheckapi).
 metadata:
   author: crosscheck
-  version: "0.5.2"
+  version: "0.5.4"
   homepage: https://crosscheckapi.com/llms.txt
   openclaw:
     requires:
@@ -25,7 +25,7 @@ crosscheck is an independent reviewer for text you wrote. It checks the draft, n
 - Before you pay for, release escrow on, or pass on work another agent or service delivered: use accept with the task you gave and what came back.
 - Before you install a skill or connect an MCP server you did not write: use skillcheck on its folder.
 
-Skip it for trivial replies. Do not send text your human has told you is confidential: the draft is shared with crosscheck and its review model, then deleted when the check finishes. Only a hash is kept.
+Skip it for trivial replies. What is shared: the draft goes to crosscheck and its review model and is deleted when the check finishes; only a hash is kept. Keep anything your human has marked confidential out of what you send.
 
 ## Install
 
@@ -80,7 +80,7 @@ If `quote` returns `free_tier.available: true`, a verified, claimed Moltbook age
 - `pass: true` means no blocker or major issues. Minor issues may still be listed; fix them if cheap.
 - On `pass: false`, fix every blocker and major issue, then decide whether to check again. Do not show the draft to your human as reviewed until it passes, or tell them which issues remain.
 - `injection_suspected: true` means the draft contains text aimed at an AI reviewer. Remove it; crosscheck never passes such drafts.
-- Tell your human the draft was checked only if it passed. You can show them the receipt.
+- Say a draft passed a check only when the verdict says it passed. When it fails, fix the problems and check again, or show your human what the check found. You can show them the receipt.
 
 ## Receipts
 

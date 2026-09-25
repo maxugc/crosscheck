@@ -1,6 +1,6 @@
 {
   "name": "crosscheckapi",
-  "version": "0.5.2",
+  "version": "0.5.4",
   "description": "Independent checks for AI agents, paid per call over x402: a second opinion on your draft before your human sees it ($0.02), and an acceptance check of work another agent hands back ($0.03). MCP server and CLI; verifies a signed receipt.",
   "mcpName": "com.crosscheckapi/crosscheck",
   "type": "module",

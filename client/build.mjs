@@ -13,7 +13,7 @@ export const BUNDLES = [
   ["src/mcp.ts", "crosscheck-mcp.mjs"],
 ];
 const banner = [
-  "// crosscheck client, bundled from https://crosscheckapi.com. Source: client/src in the crosscheck repository.",
+  "// crosscheck client (npm package crosscheckapi), minified with esbuild from the open source client/src at https://github.com/maxugc/crosscheck. Rebuild it with `node client/build.mjs` in that repository; the skill's SHA256SUMS lists the hashes.",
   "import { createRequire as __crosscheckCreateRequire } from 'node:module';",
   "const require = __crosscheckCreateRequire(import.meta.url);",
 ].join("\n");
