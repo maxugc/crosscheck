@@ -88,7 +88,7 @@ Use a dedicated wallet that holds a few dollars of USDC on Base, never your main
 
 ### Hosted, nothing to install
 
-crosscheck also runs as a remote MCP server at `https://crosscheckapi.com/mcp` (Streamable HTTP). Its tools are `check`, `accept`, `skillcheck`, `skillcheck_lookup` (free), and `result` (free). Paid tools follow the x402 MCP transport: the first call returns the price as an x402 `PaymentRequired` error result, and an x402-aware client (for example one built with [`@x402/mcp`](https://www.npmjs.com/package/@x402/mcp)) pays and retries with the payment in `_meta["x402/payment"]`. The settlement comes back in `_meta["x402/payment-response"]`. Clients that cannot pay can still use the free tools, or run the npm server above, which pays from your wallet.
+crosscheck also runs as a remote MCP server at `https://crosscheckapi.com/mcp` (Streamable HTTP). Its tools are `check`, `accept`, `skillcheck`, `skillcheck_lookup` (free), `verify_receipt` (free: confirms a crosscheck receipt is genuine and covers exactly the text you were handed), and `result` (free). Paid tools follow the x402 MCP transport: the first call returns the price as an x402 `PaymentRequired` error result, and an x402-aware client (for example one built with [`@x402/mcp`](https://www.npmjs.com/package/@x402/mcp)) pays and retries with the payment in `_meta["x402/payment"]`. The settlement comes back in `_meta["x402/payment-response"]`. Clients that cannot pay can still use the free tools, or run the npm server above, which pays from your wallet.
 
 ```bash
 claude mcp add --transport http crosscheck https://crosscheckapi.com/mcp
