@@ -51,13 +51,33 @@ serveStdio(() => {
           .max(10)
           .optional()
           .describe("Optional: the text the draft relies on (search results, documents). Each claim is then checked against it."),
+        request: z
+          .string()
+          .max(8000)
+          .optional()
+          .describe("Optional: what your human asked for, word for word. The draft then fails if it answers a different question, leaves part out, or changes it."),
+        source_urls: z
+          .array(z.string().url())
+          .max(3)
+          .optional()
+          .describe("Optional: up to 3 web pages crosscheck opens after payment and checks the draft against (+$0.01 each)"),
+        fetch_cited: z.boolean().optional().describe("Optional: also open the links the draft cites (up to 3 pages in all, +$0.01 each)"),
         ref,
         credits,
       }),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
     },
-    async ({ draft, moltbook_identity, sources, ...o }) =>
-      text(await client.order(draft, { ...paid(o), ...(moltbook_identity ? { moltbookIdentity: moltbook_identity } : {}), ...(sources ? { sources } : {}) })),
+    async ({ draft, moltbook_identity, sources, request, source_urls, fetch_cited, ...o }) =>
+      text(
+        await client.order(draft, {
+          ...paid(o),
+          ...(moltbook_identity ? { moltbookIdentity: moltbook_identity } : {}),
+          ...(sources ? { sources } : {}),
+          ...(request ? { request } : {}),
+          ...(source_urls && source_urls.length ? { sourceUrls: source_urls } : {}),
+          ...(fetch_cited ? { fetchCited: true } : {}),
+        }),
+      ),
   );
 
   server.registerTool(

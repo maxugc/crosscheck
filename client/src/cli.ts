@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 // crosscheck quote|order [file]   (reads the draft from the file, or stdin)
+//   order also takes --request <text> (what the human asked), --url <page> (up to 3, +$0.01 each),
+//   --fetch-cited (also fetch the draft's own links), and --sources <files...> last
 // crosscheck result <job_id> <result_token>
 // crosscheck accept <task-file> <deliverable-file> [reference]
 // crosscheck skillcheck <skill-or-server-folder> [--fresh]
@@ -10,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { clientFromEnv, readSkillDir, type PaidOptions } from "./core.js";
 
 const usage =
-  "Usage: crosscheck quote|order [draft-file] [--sources files...]  |  crosscheck accept <task-file> <deliverable-file> [reference]  |  crosscheck skillcheck <folder> [--fresh]  |  crosscheck result <job_id> <result_token>  |  crosscheck credits [wallet]\n" +
+  "Usage: crosscheck quote|order [draft-file] [--request text] [--url page]... [--fetch-cited] [--sources files...]  |  crosscheck accept <task-file> <deliverable-file> [reference]  |  crosscheck skillcheck <folder> [--fresh]  |  crosscheck result <job_id> <result_token>  |  crosscheck credits [wallet]\n" +
   "Paid commands (order, accept, skillcheck) also take --ref <receipt hash> and --credits.";
 
 /** Pull --ref <hash> and --credits out of argv; everything else stays in order. */
@@ -30,6 +32,27 @@ function paidFlags(argv: string[]): { args: string[]; paid: PaidOptions } {
   return { args, paid };
 }
 
+/** Pull order's --request <text>, --url <page> (repeatable), and --fetch-cited out of argv. */
+function orderFlags(argv: string[]): { rest: string[]; request?: string; sourceUrls: string[]; fetchCited: boolean } {
+  const rest: string[] = [];
+  const sourceUrls: string[] = [];
+  let request: string | undefined;
+  let fetchCited = false;
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i]!;
+    if (a === "--fetch-cited") fetchCited = true;
+    else if (a === "--request" || a === "--url") {
+      const v = argv[++i];
+      if (!v) throw new Error(`${a} needs a value`);
+      if (a === "--request") request = v;
+      else sourceUrls.push(v);
+    } else if (a.startsWith("--request=")) request = a.slice(10);
+    else if (a.startsWith("--url=")) sourceUrls.push(a.slice(6));
+    else rest.push(a);
+  }
+  return { rest, ...(request ? { request } : {}), sourceUrls, fetchCited };
+}
+
 async function readDraft(file?: string): Promise<string> {
   if (file) return readFileSync(file, "utf8");
   const chunks: Buffer[] = [];
@@ -44,10 +67,17 @@ async function main() {
   let out: unknown;
   if (cmd === "quote") out = await client.quote(await readDraft(args[0]));
   else if (cmd === "order") {
-    // crosscheck order draft.txt --sources a.txt b.txt
-    const at = args.indexOf("--sources");
-    const sources = at >= 0 ? args.slice(at + 1).map((f) => ({ title: f, text: readFileSync(f, "utf8") })) : [];
-    out = await client.order(await readDraft(at === 0 ? undefined : args[0]), { ...paid, ...(sources.length ? { sources } : {}) });
+    // crosscheck order draft.txt --request "What did Q3 revenue do?" --url https://example.com/q3 --sources a.txt b.txt
+    const { rest: orderArgs, request, sourceUrls, fetchCited } = orderFlags(args);
+    const at = orderArgs.indexOf("--sources");
+    const sources = at >= 0 ? orderArgs.slice(at + 1).map((f) => ({ title: f, text: readFileSync(f, "utf8") })) : [];
+    out = await client.order(await readDraft(at === 0 ? undefined : orderArgs[0]), {
+      ...paid,
+      ...(sources.length ? { sources } : {}),
+      ...(request ? { request } : {}),
+      ...(sourceUrls.length ? { sourceUrls } : {}),
+      ...(fetchCited ? { fetchCited } : {}),
+    });
   }
   else if (cmd === "result" && args.length === 2) out = await client.result(args[0]!, args[1]!);
   else if (cmd === "credits" && args.length <= 1) out = await client.credits(args[0]);

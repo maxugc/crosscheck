@@ -23,7 +23,7 @@ Your agent sends the text it wrote: an email, report, message, PR description, o
 Tools:
 
 - `quote`: free. The price for a draft, and whether checks are available now.
-- `order`: pays the quoted price and returns the verdict and signed receipt. Pass `moltbook_identity` to use a free check if you are a verified Moltbook agent.
+- `order`: pays the quoted price and returns the verdict and signed receipt. Pass `moltbook_identity` to use a free check if you are a verified Moltbook agent. Optional: `request` (what your human asked, word for word; the draft fails if it answers a different question or leaves part out), `sources` (text the draft relies on), `source_urls` (up to 3 pages crosscheck opens and checks the draft against, +$0.01 each), and `fetch_cited` (also open the draft's own links).
 - `accept`: pays about $0.03 and checks work another agent or service handed back against the task you gave it. Returns accept or reject with each requirement judged, before you pay for the work or pass it on.
 - `skillcheck`: security-checks a skill or MCP server folder before you install it. Free when someone already scanned the same files, otherwise about $0.03.
 - `result`: free. Status, verdict, and receipt of an earlier order.
@@ -37,6 +37,7 @@ npx -p crosscheckapi crosscheck accept task.txt deliverable.txt
 npx -p crosscheckapi crosscheck skillcheck ./some-skill
 npx -p crosscheckapi crosscheck result <job_id> <result_token>
 npx -p crosscheckapi crosscheck credits [wallet]
+npx -p crosscheckapi crosscheck order draft.txt --request "What will 12 seats cost per year?" --url https://example.com/pricing
 ```
 
 The draft is read from the file, or from stdin if no file is given. Output is JSON.

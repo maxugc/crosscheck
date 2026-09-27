@@ -10,5 +10,6 @@ Each example sends [draft.txt](draft.txt) (or your own text) to crosscheck. The 
 | [openai-agents](openai-agents) | An OpenAI Agents SDK agent using the MCP server (`agent.py`), and crosscheck as an output guardrail that stops a draft that does not pass (`guardrail.py`) |
 | [langchain](langchain) | A LangChain agent using the MCP server |
 | [claude-agent-sdk](claude-agent-sdk) | A Claude Agent SDK agent using the MCP server |
+| [agentkit](agentkit) | A Coinbase AgentKit agent paying with its own wallet through AgentKit's x402 action provider (`check.ts`); nothing to install from crosscheck |
 
 All of them take `CROSSCHECK_WALLET_KEY`, the private key of a dedicated wallet with a few dollars of USDC on Base. To try them for free, get test USDC on Base Sepolia from https://faucet.circle.com and set `CROSSCHECK_NETWORKS=eip155:84532`.

@@ -114,9 +114,27 @@ export class CrosscheckClient {
    */
   async order(
     draft: string,
-    opts: PaidOptions & { moltbookIdentity?: string; sources?: Array<string | { text: string; title?: string | undefined; url?: string | undefined }> } = {},
+    opts: PaidOptions & {
+      moltbookIdentity?: string;
+      /** What the human asked for; the reviewer then also checks the draft answers it. */
+      request?: string;
+      sources?: Array<string | { text: string; title?: string | undefined; url?: string | undefined }>;
+      /** Up to 3 web pages crosscheck fetches after payment and checks the draft against (+$0.01 each). */
+      sourceUrls?: string[];
+      /** Also fetch the links the draft cites (up to 3 pages in all). */
+      fetchCited?: boolean;
+    } = {},
   ): Promise<Json> {
-    const request = withRef({ draft, ...(opts.sources && opts.sources.length ? { sources: opts.sources } : {}) }, opts.ref);
+    const request = withRef(
+      {
+        draft,
+        ...(opts.request ? { request: opts.request } : {}),
+        ...(opts.sources && opts.sources.length ? { sources: opts.sources } : {}),
+        ...(opts.sourceUrls && opts.sourceUrls.length ? { source_urls: opts.sourceUrls } : {}),
+        ...(opts.fetchCited ? { fetch_cited: true } : {}),
+      },
+      opts.ref,
+    );
     const identity = opts.moltbookIdentity ? { "x-moltbook-identity": opts.moltbookIdentity } : {};
     if (!this.opts.privateKey) {
       if (!opts.moltbookIdentity) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY), or pass a Moltbook identity token for a free check.");
