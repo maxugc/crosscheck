@@ -215,9 +215,9 @@ export class CrosscheckClient {
     return out;
   }
 
-  private async paidPost(path: string, body: unknown, extraHeaders: Record<string, string>): Promise<Json> {
+  private async paidPost(path: string, body: unknown, extraHeaders: Record<string, string>, maxUsd = this.opts.maxUsd ?? 0.1): Promise<Json> {
     const account = privateKeyToAccount(this.opts.privateKey as `0x${string}`);
-    const maxAtomic = BigInt(Math.round((this.opts.maxUsd ?? 0.1) * 1e6));
+    const maxAtomic = BigInt(Math.round(maxUsd * 1e6));
     const allowed = this.opts.networks ?? DEFAULT_NETWORKS;
     // Pick the most preferred allowed network the service offers.
     const client = new x402Client((_version, options) => {
@@ -264,6 +264,31 @@ export class CrosscheckClient {
     const body = withRef({ files }, opts.ref);
     if (opts.credits) return this.creditPost("/v1/skillcheck", body);
     return this.paidPost("/v1/skillcheck", body, {});
+  }
+
+  /**
+   * For x402 sellers: a dated report on your own resource ($0.05). Does it answer a valid 402, is it
+   * in the x402 Bazaar index, would agent402's router route to it, and how many USDC settlements
+   * reached its payTo on Base in 24 hours and 7 days.
+   */
+  async sellercheck(resource: string, opts: { method?: "GET" | "POST" } = {}): Promise<Json> {
+    if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
+    return this.paidPost("/v1/sellercheck", { resource, ...(opts.method ? { method: opts.method } : {}) }, {});
+  }
+
+  /** Free. The door and Bazaar parts of sellercheck, unsigned, cached for an hour. */
+  async sellerPreflight(resource: string): Promise<Json> {
+    const res = await this.fetchImpl(`${this.baseUrl}/v1/sellercheck/preflight?resource=${encodeURIComponent(resource)}`);
+    return { http_status: res.status, ...((await res.json()) as Json) };
+  }
+
+  /**
+   * For x402 sellers: sellercheck every hour for 30 days, $1 once, with an alert to your webhook or
+   * ntfy topic only on change. This one call may spend up to $1 whatever maxUsd says.
+   */
+  async sellerwatch(resource: string, notify: { webhook?: string; ntfy?: string }, opts: { method?: "GET" | "POST" } = {}): Promise<Json> {
+    if (!this.opts.privateKey) throw new Error("A wallet private key is required to pay (set CROSSCHECK_WALLET_KEY).");
+    return this.paidPost("/v1/sellerwatch", { resource, notify, ...(opts.method ? { method: opts.method } : {}) }, {}, Math.max(this.opts.maxUsd ?? 0.1, 1));
   }
 
   /** Free. Status, verdict, and receipt of an earlier order. */

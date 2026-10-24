@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { clientFromEnv, readSkillDir, type PaidOptions } from "./core.js";
 
 const usage =
-  "Usage: crosscheck quote|order [draft-file] [--request text] [--url page]... [--fetch-cited] [--sources files...]  |  crosscheck accept <task-file> <deliverable-file> [reference]  |  crosscheck skillcheck <folder> [--fresh]  |  crosscheck result <job_id> <result_token>  |  crosscheck credits [wallet]\n" +
+  "Usage: crosscheck quote|order [draft-file] [--request text] [--url page]... [--fetch-cited] [--sources files...]  |  crosscheck accept <task-file> <deliverable-file> [reference]  |  crosscheck skillcheck <folder> [--fresh]  |  crosscheck sellercheck <resource-url> [--post] [--preflight]  |  crosscheck sellerwatch <resource-url> <webhook-url|ntfy:topic> [--post]  |  crosscheck result <job_id> <result_token>  |  crosscheck credits [wallet]\n" +
   "Paid commands (order, accept, skillcheck) also take --ref <receipt hash> and --credits.";
 
 /** Pull --ref <hash> and --credits out of argv; everything else stays in order. */
@@ -78,6 +78,14 @@ async function main() {
       ...(sourceUrls.length ? { sourceUrls } : {}),
       ...(fetchCited ? { fetchCited } : {}),
     });
+  }
+  else if (cmd === "sellercheck" && args.length >= 1) {
+    // crosscheck sellercheck https://your.api/paid-route [--post] [--preflight]
+    out = args.includes("--preflight") ? await client.sellerPreflight(args[0]!) : await client.sellercheck(args[0]!, args.includes("--post") ? { method: "POST" } : {});
+  } else if (cmd === "sellerwatch" && args.length >= 2) {
+    // crosscheck sellerwatch https://your.api/paid-route https://your.api/hook | ntfy:<topic>
+    const target = args[1]!;
+    out = await client.sellerwatch(args[0]!, target.startsWith("ntfy:") ? { ntfy: target.slice(5) } : { webhook: target }, args.includes("--post") ? { method: "POST" } : {});
   }
   else if (cmd === "result" && args.length === 2) out = await client.result(args[0]!, args[1]!);
   else if (cmd === "credits" && args.length <= 1) out = await client.credits(args[0]);

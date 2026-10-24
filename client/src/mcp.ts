@@ -21,7 +21,7 @@ const credits = z
 const paid = (o: { ref?: string | undefined; credits?: boolean | undefined }) => ({ ...(o.ref ? { ref: o.ref } : {}), ...(o.credits ? { credits: true } : {}) });
 
 serveStdio(() => {
-  const server = new McpServer({ name: "crosscheck", version: "0.5.5" }, { capabilities: { tools: {} } });
+  const server = new McpServer({ name: "crosscheck", version: "0.6.0" }, { capabilities: { tools: {} } });
 
   server.registerTool(
     "quote",
@@ -131,6 +131,42 @@ serveStdio(() => {
       const input = files ?? (directory ? readSkillDir(directory) : undefined);
       if (!input) throw new Error("Pass directory or files");
       return text(await client.skillcheck(input, { ...paid(o), ...(fresh ? { fresh } : {}) }));
+    },
+  );
+
+  server.registerTool(
+    "sellercheck",
+    {
+      title: "Check your own x402 resource",
+      description:
+        "For x402 sellers: one dated report on your paid resource, by code alone, $0.05 USDC. Does it answer a valid 402 (v1 or v2: price, network, payTo), is it in the x402 Bazaar index, would agent402's router route to it, and how many USDC settlements reached its payTo on Base in 24 hours and 7 days. Set preflight for the free door and Bazaar parts only.",
+      inputSchema: z.object({
+        resource: z.string().url().describe("The full URL of your x402 resource"),
+        method: z.enum(["GET", "POST"]).optional().describe("The method it is paid with; default tries GET, then POST"),
+        preflight: z.boolean().optional().describe("Free: only the door and the Bazaar, unsigned, cached an hour"),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ resource, method, preflight }) => text(preflight ? await client.sellerPreflight(resource) : await client.sellercheck(resource, method ? { method } : {})),
+  );
+
+  server.registerTool(
+    "sellerwatch",
+    {
+      title: "Watch your x402 resource for 30 days",
+      description:
+        "For x402 sellers: sellercheck every hour for 30 days on one resource, $1 USDC once. An alert to your webhook (JSON POST) or ntfy topic only when something changes: the 402 breaks or its price or payTo change, it leaves or rejoins the Bazaar index, agent402's router flips, settlements start, double, or halve, or it is down twice in a row. Returns a public record page to link from your listing.",
+      inputSchema: z.object({
+        resource: z.string().url().describe("The full URL of your x402 resource"),
+        method: z.enum(["GET", "POST"]).optional().describe("The method it is paid with; default tries GET, then POST"),
+        webhook: z.string().url().optional().describe("A public https URL that gets a JSON POST per alert"),
+        ntfy: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/).optional().describe("An ntfy.sh topic for alerts"),
+      }),
+      annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+    },
+    async ({ resource, method, webhook, ntfy }) => {
+      if (!webhook && !ntfy) throw new Error("Pass webhook or ntfy (or both)");
+      return text(await client.sellerwatch(resource, { ...(webhook ? { webhook } : {}), ...(ntfy ? { ntfy } : {}) }, method ? { method } : {}));
     },
   );
 

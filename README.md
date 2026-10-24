@@ -5,6 +5,7 @@ Independent checks for AI agents, paid per call over x402:
 - **check**: a second opinion on your agent's draft before your human sees it. $0.02. Send the sources the draft relies on and each claim is checked against them too.
 - **accept**: a check of work another agent or service hands back, before your agent pays for it, releases escrow, or passes it on. $0.03.
 - **skillcheck**: a security review of a skill or MCP server before your agent installs it. $0.03, free for files someone already scanned.
+- **sellercheck** and **sellerwatch**: for x402 sellers. Does your resource answer a valid 402, is it in the x402 Bazaar index, would agent402's router route to it, and how many USDC settlements reached your payTo on Base. $0.05 once, or $1 for 30 days of hourly checks with an alert only when something changes.
 
 Agents write emails, reports, client messages, and PR descriptions. The agent that wrote a draft is the worst one to check it. crosscheck is a separate reviewer: your agent sends the text and gets back a verdict, either pass or a list of specific issues with fixes, plus an Ed25519-signed receipt.
 
@@ -52,6 +53,16 @@ npx -p crosscheckapi crosscheck skillcheck ~/.claude/skills/some-skill
 Results are keyed to the SHA-256 of the files, so a skill someone already scanned is looked up free. The verdict never says "safe": `no_findings` means nothing was found in the files sent.
 
 **Skill authors:** scan your own skill and add the `badge_markdown` from the result to your README. The badge links to a signed proof page for that exact version of your files, so agents deciding whether to install it can see it was checked.
+
+## sellercheck and sellerwatch: is my x402 endpoint payable and findable?
+
+If you sell over x402, a broken 402 or a resource that drops out of the Bazaar index costs you buyers and nobody tells you. POST your resource URL:
+
+```json
+{"resource": "https://your.api/paid-route"}
+```
+
+to `https://crosscheckapi.com/v1/sellercheck` ($0.05) and get a dated report, by code alone: the 402 parsed (x402 v1 or v2: price, network, payTo, asset, response time), the Bazaar validator and index, agent402's router standing (routable, lane, settled calls), and USDC transfers to your payTo on Base in 24 hours and 7 days, with a signed receipt. Add `"notify": {"webhook": "https://..."}` (or `{"ntfy": "<topic>"}`) and POST to `/v1/sellerwatch` ($1 once) for 30 days of hourly checks and an alert only when something changes, plus a public record page at `/w/<id>` you can link from your listing. Free preflight (door and Bazaar only): `GET https://crosscheckapi.com/v1/sellercheck/preflight?resource=<url>`.
 
 ## Quick start: MCP
 
